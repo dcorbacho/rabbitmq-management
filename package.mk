@@ -1,5 +1,5 @@
 RELEASABLE:=true
-DEPS:=rabbitmq-web-dispatch webmachine-wrapper rabbitmq-server rabbitmq-erlang-client rabbitmq-management-agent rabbitmq-test
+DEPS:=rabbitmq-web-dispatch rabbitmq-server rabbitmq-erlang-client rabbitmq-management-agent rabbitmq-test
 FILTER:=all
 COVER:=false
 WITH_BROKER_TEST_COMMANDS:=rabbit_test_runner:run_in_broker(\"$(PACKAGE_DIR)/test/ebin\",\"$(FILTER)\")
