@@ -2,6 +2,7 @@
 <div class="section">
   <h2>All queues</h2>
   <div class="hider">
+    <h3>Pagination</h3>
     <div class="updatable">
     <div id="page-form" style="float:left; position:relative">
     <label for="queue-page">Page </label>
@@ -16,26 +17,26 @@
     of <%= queues.page_count %>
     </div>
 
-    <div style="float:right; position:relative">
+    <div>
     <table class="list">
     <tr>
     <th>Total</th>
     <th>Filtered</th>
     <th>Page size</th>
-    <th>Page count</th>
     </tr>
     <tr>
     <th><%= queues.all %></th>
     <th><%= queues.filtered %></th>
     <th><%= queues.page_size %></th>
-    <th><%= queues.page_count %></th>
     </tr>
     </table>
     </div>
     </div>
 
+<h3>Filtering</h3>
 <%= filter_ui(queues.elements) %>
   </div>
+
   <div class="updatable">
 <% if (queues.elements.length > 0) { %>
 <table class="list">
