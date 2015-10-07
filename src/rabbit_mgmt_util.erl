@@ -31,7 +31,8 @@
 -export([filter_conn_ch_list/3, filter_user/2, list_login_vhosts/2]).
 -export([with_decode/5, decode/1, decode/2, redirect/2, set_resp_header/3,
          args/1]).
--export([reply_list/3, reply_list/4, sort_list/2, destination_type/1]).
+-export([reply_list/3, reply_list/4,reply_list/5, sort_list/2,
+  destination_type/1]).
 -export([post_respond/1, columns/1, is_monitor/1]).
 -export([list_visible_vhosts/1, b64decode_or_throw/1, no_range/0, range/1,
          range_ceil/1, floor/2, ceil/2,int/2]).
@@ -45,6 +46,7 @@
 -include_lib("webmachine/include/wm_reqstate.hrl").
 
 -define(FRAMING, rabbit_framing_amqp_0_9_1).
+-define(PAGE_SIZE, 5).
 
 %%--------------------------------------------------------------------
 
@@ -195,11 +197,12 @@ reply0(Facts, ReqData, Context) ->
             internal_server_error(Error, Reason, ReqData1, Context)
     end.
 
-reply_list(Facts, ReqData, Context,Page) ->
-  reply_list(Facts, ["vhost", "name"], ReqData, Context,Page).
 
 reply_list(Facts, ReqData, Context) ->
     reply_list(Facts, ["vhost", "name"], ReqData, Context,undefined).
+
+reply_list(Facts, DefaultSorts, ReqData, Context) ->
+    reply_list(Facts, DefaultSorts, ReqData, Context,undefined).
 
 reply_list(Facts, DefaultSorts, ReqData, Context,Page) ->
     SortList =
@@ -226,35 +229,30 @@ sort_list(Facts, DefaultSorts, Sort, Reverse,From) ->
     Sorted = [V || {_K, V} <- lists:sort(
                                 [{sort_key(F, SortList), F} || F <- Facts])],
 
-    RangeList = applyRangeFilter(Sorted, From, 100),
+    RangeList = applyRangeFilter(Sorted, From, ?PAGE_SIZE),
     case RangeList of
       {bad_request, Reason} -> {bad_request, Reason};
-      _ ->  %  then  apply the range filter
-      case Reverse of
-        "true" ->
-          filterResponse(lists:reverse(RangeList),
-            From, 100,
-            length(Sorted), length(RangeList));
-        _ ->
-          filterResponse(RangeList,
-            From, 100,
-            length(Sorted), length(RangeList))
-      end
+      _ ->  %   apply the range filter
+        filterResponse(reverse(RangeList, Reverse),From,?PAGE_SIZE,
+          length(Sorted), length(RangeList))
   end.
 
 %% filters functions
 
+reverse(RangeList, "true") ->
+    lists:reverse(RangeList);
+reverse(RangeList, _) ->
+    RangeList.
+
 applyRangeFilter(List, From, Page_Size) when is_integer(From) and
     (From > 0) and is_integer(Page_Size) ->
     Offset = (From - 1) * Page_Size + 1,
-
     try
         lists:sublist(List, Offset, Page_Size)
     catch
         error:function_clause ->
-        {bad_request, list_to_binary([<<"page-out-of-index, from: ">>,
-          integer_to_binary(Offset), <<" page size:">>, integer_to_binary(Page_Size),
-          <<", list length: ">>, integer_to_binary(length(List))])}
+        {bad_request, list_to_binary(io_lib:format("page-out-of-index, from: ~p
+        page size: ~p, list length: ~p", [From, Page_Size, length(List)]))}
     end;
 %% Here it is backward with the other API(s), that don't filter the data
 applyRangeFilter(List, _From, _Page_Size) ->
@@ -262,10 +260,12 @@ applyRangeFilter(List, _From, _Page_Size) ->
 
 filterResponse(List, From, Page_Size, All, Filtered) when
     is_integer(From) and is_integer(Page_Size)  ->
+     TotalPage = trunc((All + Page_Size - 1) / Page_Size),
     [{all, All},
      {filtered, Filtered},
      {from, From},
      {page_size, Page_Size},
+     {page_count, TotalPage},
      {elements, List}
    ];
 %% Here it is backward with the other API(s), that don't filter the data
