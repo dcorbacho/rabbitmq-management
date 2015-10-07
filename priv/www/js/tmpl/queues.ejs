@@ -3,18 +3,16 @@
   <h2>All queues</h2>
   <div class="hider">
 
-<div id="page-form">
+    <div id="page-form">
     <label for="queue-page">Page </label>
     <select id="queue-page">
-    <% for (var i = 1; i <= (queues.page_count); i++) { if (i == queues.from) {%>
-                <option selected="selected" value="<%= i %>"><%= i %></option>
-                <% } %>} else {
-%>
-                <option value="<%= i %>"><%= i %></option>
-                <% } %>
-                }
+    <% for (var i = 1; i <= (queues.all/queues.filtered); i++) { if (i == queues.from) {%>
+    <option selected="selected" value="<%= i %>"><%= i %></option>
+											<% } else { %>
+												    %>
+												    <option value="<%= i %>"><%= i %></option>
+												    <% } }%>
     </select>
-    
 <%= filter_ui(queues.elements) %>
   </div>
   <div class="updatable">
