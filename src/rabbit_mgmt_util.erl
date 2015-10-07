@@ -31,7 +31,7 @@
 -export([filter_conn_ch_list/3, filter_user/2, list_login_vhosts/2]).
 -export([with_decode/5, decode/1, decode/2, redirect/2, set_resp_header/3,
          args/1]).
--export([reply_list/3, reply_list/4,reply_list/5, sort_list/2,
+-export([reply_list/3, reply_list/4,reply_list/6, sort_list/2,
   destination_type/1]).
 -export([post_respond/1, columns/1, is_monitor/1]).
 -export([list_visible_vhosts/1, b64decode_or_throw/1, no_range/0, range/1,
@@ -46,7 +46,7 @@
 -include_lib("webmachine/include/wm_reqstate.hrl").
 
 -define(FRAMING, rabbit_framing_amqp_0_9_1).
--define(PAGE_SIZE, 5).
+
 
 %%--------------------------------------------------------------------
 
@@ -199,18 +199,18 @@ reply0(Facts, ReqData, Context) ->
 
 
 reply_list(Facts, ReqData, Context) ->
-    reply_list(Facts, ["vhost", "name"], ReqData, Context,undefined).
+    reply_list(Facts, ["vhost", "name"], ReqData, Context,undefined,undefined).
 
 reply_list(Facts, DefaultSorts, ReqData, Context) ->
-    reply_list(Facts, DefaultSorts, ReqData, Context,undefined).
+    reply_list(Facts, DefaultSorts, ReqData, Context,undefined,undefined).
 
-reply_list(Facts, DefaultSorts, ReqData, Context,Page) ->
+reply_list(Facts, DefaultSorts, ReqData, Context,Page,Page_Size) ->
     SortList =
       sort_list(
           extract_columns_list(Facts, ReqData),
           DefaultSorts,
           wrq:get_qs_value("sort", ReqData),
-          wrq:get_qs_value("sort_reverse", ReqData), Page),
+          wrq:get_qs_value("sort_reverse", ReqData), Page,Page_Size),
 
           %%  `case` added por pagination.
     case SortList of
@@ -218,10 +218,10 @@ reply_list(Facts, DefaultSorts, ReqData, Context,Page) ->
         _ -> reply(SortList, ReqData, Context)
     end.
 
-sort_list(Facts, Sorts) -> sort_list(Facts, Sorts, undefined, false, undefined).
+sort_list(Facts, Sorts) -> sort_list(Facts, Sorts, undefined, false, undefined,undefined).
 
-sort_list(Facts, DefaultSorts, Sort, Reverse,From) ->
-    SortList = case Sort of
+sort_list(Facts, DefaultSorts, Sort, Reverse,From,Page_Size) ->
+  SortList = case Sort of
                undefined -> DefaultSorts;
                Extra     -> [Extra | DefaultSorts]
            end,
@@ -229,11 +229,11 @@ sort_list(Facts, DefaultSorts, Sort, Reverse,From) ->
     Sorted = [V || {_K, V} <- lists:sort(
                                 [{sort_key(F, SortList), F} || F <- Facts])],
 
-    RangeList = applyRangeFilter(Sorted, From, ?PAGE_SIZE),
+    RangeList = applyRangeFilter(Sorted, From, Page_Size),
     case RangeList of
       {bad_request, Reason} -> {bad_request, Reason};
       _ ->  %   apply the range filter
-        filterResponse(reverse(RangeList, Reverse),From,?PAGE_SIZE,
+        filterResponse(reverse(RangeList, Reverse),From,Page_Size,
           length(Sorted), length(RangeList))
   end.
 
@@ -260,7 +260,7 @@ applyRangeFilter(List, _From, _Page_Size) ->
 
 filterResponse(List, From, Page_Size, All, Filtered) when
     is_integer(From) and is_integer(Page_Size)  ->
-     TotalPage = trunc((All + Page_Size - 1) / Page_Size),
+    TotalPage = trunc((All + Page_Size - 1) / Page_Size),
     [{all, All},
      {filtered, Filtered},
      {from, From},

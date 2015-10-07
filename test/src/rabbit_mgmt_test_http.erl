@@ -20,7 +20,7 @@
 
 -export([http_get/1, http_put/3, http_delete/2]).
 
--import(rabbit_mgmt_test_util, [assert_list/2, assert_item/2, test_item/2]).
+-import(rabbit_mgmt_test_util, [assert_value/2,assert_list/2, assert_item/2, test_item/2]).
 -import(rabbit_misc, [pget/2]).
 
 overview_test() ->
@@ -852,6 +852,69 @@ exclusive_queue_test() ->
     amqp_channel:close(Ch),
     amqp_connection:close(Conn),
     ok.
+
+pagination_test() ->
+    QArgs = [],
+    PermArgs = [{configure, <<".*">>}, {write, <<".*">>}, {read, <<".*">>}],
+    http_put("/vhosts/vh1", none, ?NO_CONTENT),
+    http_put("/permissions/vh1/guest", PermArgs, ?NO_CONTENT),
+    http_put("/queues/%2f/test0", QArgs, ?NO_CONTENT),
+    http_put("/queues/vh1/test1", QArgs, ?NO_CONTENT),
+    http_put("/queues/%2f/test2", QArgs, ?NO_CONTENT),
+    http_put("/queues/vh1/test3", QArgs, ?NO_CONTENT),
+    PageResult_PageSize = http_get("/queues?page=1&page_size=2", ?OK),
+    assert_value(4, proplists:get_value(all, PageResult_PageSize)),
+    assert_value(2, proplists:get_value(filtered, PageResult_PageSize)),
+    assert_value(1, proplists:get_value(from, PageResult_PageSize)),
+    assert_value(2, proplists:get_value(page_size, PageResult_PageSize)),
+    assert_value(2, proplists:get_value(page_count, PageResult_PageSize)),
+    assert_list([[{name, <<"test0">>}, {vhost, <<"/">>}],
+      [{name, <<"test2">>}, {vhost, <<"/">>}]
+    ],proplists:get_value(elements, PageResult_PageSize)),
+
+    PageResult_SortName = http_get("/queues?sort=name&page=1&page_size=2", ?OK),
+    assert_value(4, proplists:get_value(all, PageResult_SortName)),
+    assert_value(2, proplists:get_value(filtered, PageResult_SortName)),
+    assert_value(1, proplists:get_value(from, PageResult_SortName)),
+    assert_value(2, proplists:get_value(page_size, PageResult_SortName)),
+    assert_value(2, proplists:get_value(page_count, PageResult_SortName)),
+    assert_list([[{name, <<"test0">>}, {vhost, <<"/">>}],
+      [{name, <<"test1">>}, {vhost, <<"vh1">>}]
+    ],proplists:get_value(elements, PageResult_SortName)),
+
+
+    PageResult_FirstPage = http_get("/queues?page=1", ?OK),
+    assert_value(4, proplists:get_value(all, PageResult_FirstPage)),
+    assert_value(4, proplists:get_value(filtered, PageResult_FirstPage)),
+    assert_value(1, proplists:get_value(from, PageResult_FirstPage)),
+    assert_value(100, proplists:get_value(page_size, PageResult_FirstPage)),
+    assert_value(1, proplists:get_value(page_count, PageResult_FirstPage)),
+    assert_list([[{name, <<"test0">>}, {vhost, <<"/">>}],
+      [{name, <<"test1">>}, {vhost, <<"vh1">>}],
+      [{name, <<"test2">>}, {vhost, <<"/">>}],
+      [{name, <<"test3">>}, {vhost, <<"vh1">>}]
+    ],proplists:get_value(elements, PageResult_FirstPage)),
+
+
+    PageResult_Page2SortReverse = http_get("/queues?page=2&page_size=2&sort=name&sort_reverse=true", ?OK),
+    assert_value(4, proplists:get_value(all, PageResult_Page2SortReverse)),
+    assert_value(2, proplists:get_value(filtered, PageResult_Page2SortReverse)),
+    assert_value(2, proplists:get_value(from, PageResult_Page2SortReverse)),
+    assert_value(2, proplists:get_value(page_size, PageResult_Page2SortReverse)),
+    assert_value(2, proplists:get_value(page_count, PageResult_Page2SortReverse)),
+    assert_list([[{name, <<"test3">>}, {vhost, <<"vh1">>}],
+    [{name, <<"test2">>}, {vhost, <<"/">>}]
+    ],proplists:get_value(elements, PageResult_Page2SortReverse)),
+
+
+  http_get("/queues?page=1000", ?BAD_REQUEST),
+    http_delete("/queues/%2f/test0", ?NO_CONTENT),
+    http_delete("/queues/vh1/test1", ?NO_CONTENT),
+    http_delete("/queues/%2f/test2", ?NO_CONTENT),
+    http_delete("/queues/vh1/test3", ?NO_CONTENT),
+    http_delete("/vhosts/vh1", ?NO_CONTENT),
+    ok.
+
 
 sorting_test() ->
     QArgs = [],

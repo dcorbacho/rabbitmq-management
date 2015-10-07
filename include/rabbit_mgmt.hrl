@@ -21,3 +21,5 @@
 -record(stats, {diffs, base}).
 
 -define(AUTH_REALM, "Basic realm=\"RabbitMQ Management\"").
+
+-define(PAGE_SIZE, 100).
