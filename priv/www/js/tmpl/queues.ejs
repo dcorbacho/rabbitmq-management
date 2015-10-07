@@ -2,8 +2,8 @@
 <div class="section">
   <h2>All queues</h2>
   <div class="hider">
-
-    <div id="page-form">
+    <div>
+    <div id="page-form" style="float:left; position:relative">
     <label for="queue-page">Page </label>
     <select id="queue-page">
     <% for (var i = 1; i <= (queues.all/queues.filtered); i++) { if (i == queues.from) {%>
@@ -13,6 +13,26 @@
 												    <option value="<%= i %>"><%= i %></option>
 												    <% } }%>
     </select>
+    </div>
+
+    <div style="float:right; position:relative">
+    <table class="list">
+    <tr>
+    <th>Total</th>
+    <th>Filtered</th>
+    <th>Page size</th>
+    <th>Page count</th>
+    </tr>
+    <tr>
+    <th><%= queues.all %></th>
+    <th><%= queues.filtered %></th>
+    <th><%= queues.page_size %></th>
+    <th><%= queues.page_count %></th>
+    </tr>
+    </table>
+    </div>
+    </div>
+
 <%= filter_ui(queues.elements) %>
   </div>
   <div class="updatable">
