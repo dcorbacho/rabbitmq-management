@@ -3,17 +3,10 @@
   <h2>All queues</h2>
   <div class="hider">
     <h3>Pagination</h3>
-    <div class="updatable">
-    <div id="page-form" style="float:left; position:relative">
-    
-    
-   
-</div>
- <div >
-    <table class="">
+    <table class="updatable">
     <tr>
     <th><label for="queue-page">Page </label> <select id="queue-page">
-    <% for (var i = 1; i <= (queues.all/queues.filtered); i++) { if (i == queues.from) {%>
+    <% for (var i = 1; i <= queues.page_count; i++) { if (i == queues.from) {%>
     <option selected="selected" value="<%= i %>"><%= i %></option>
                       <% } else { %>
                             %>
@@ -30,9 +23,6 @@
     <th> Page size:  <input id="filter" class="truncate" type="text" value= <%= queues.page_size %>></input>   </th>
     </tr>
     </table>
-    </div>
-    </div>
- 
 
 <h3>Filtering</h3>
 <%= filter_ui(queues.elements) %>
