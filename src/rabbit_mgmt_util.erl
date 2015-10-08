@@ -37,6 +37,8 @@
 -export([list_visible_vhosts/1, b64decode_or_throw/1, no_range/0, range/1,
          range_ceil/1, floor/2, ceil/2,int/2]).
 
+-export([getPageSize/1, getPageNumber/1]).
+
 -import(rabbit_misc, [pget/2, pget/3]).
 
 -include("rabbit_mgmt.hrl").
@@ -218,10 +220,10 @@ reply_list(Facts, DefaultSorts, ReqData, Context,Page,Page_Size) ->
         _ -> reply(SortList, ReqData, Context)
     end.
 
-sort_list(Facts, Sorts) -> sort_list(Facts, Sorts, undefined, false, undefined,undefined).
+sort_list(Facts, Sorts) -> sort_list(Facts, Sorts, undefined, false, undefined, undefined).
 
 sort_list(Facts, DefaultSorts, Sort, Reverse,From,Page_Size) ->
-  SortList = case Sort of
+    SortList = case Sort of
                undefined -> DefaultSorts;
                Extra     -> [Extra | DefaultSorts]
            end,
@@ -230,21 +232,24 @@ sort_list(Facts, DefaultSorts, Sort, Reverse,From,Page_Size) ->
                                 [{sort_key(F, SortList), F} || F <- Facts])],
 
     RangeList = applyRangeFilter(Sorted, From, Page_Size),
-    case RangeList of
-      {bad_request, Reason} -> {bad_request, Reason};
-      _ ->  %   apply the range filter
-        filterResponse(reverse(RangeList, Reverse),From,Page_Size,
-          length(Sorted), length(RangeList))
-  end.
+    filterResponse(reverse(RangeList, Reverse),From, Page_Size, Sorted).
 
 %% filters functions
+getPageSize(ReqData)  ->
+    case rabbit_mgmt_util:int("page_size", ReqData) of
+         undefined -> ?PAGE_SIZE;
+         Page_Size -> Page_Size
+    end.
 
-reverse(RangeList, "true") ->
+getPageNumber(ReqData)  ->
+    rabbit_mgmt_util:int("page", ReqData).
+
+reverse(RangeList, "true") when is_list(RangeList) ->
     lists:reverse(RangeList);
 reverse(RangeList, _) ->
     RangeList.
 
-applyRangeFilter(List, From, Page_Size) when is_integer(From) and
+applyRangeFilter(List, From, Page_Size) when is_list(List) and is_integer(From) and
     (From > 0) and is_integer(Page_Size) ->
     Offset = (From - 1) * Page_Size + 1,
     try
@@ -258,18 +263,18 @@ applyRangeFilter(List, From, Page_Size) when is_integer(From) and
 applyRangeFilter(List, _From, _Page_Size) ->
     List.
 
-filterResponse(List, From, Page_Size, All, Filtered) when
+filterResponse(List, From, Page_Size, All) when is_list(List) and
     is_integer(From) and is_integer(Page_Size)  ->
-    TotalPage = trunc((All + Page_Size - 1) / Page_Size),
-    [{all, All},
-     {filtered, Filtered},
+    TotalPage = trunc((length(All) + Page_Size - 1) / Page_Size),
+    [{all, length(All)},
+     {filtered, length(List)},
      {from, From},
      {page_size, Page_Size},
      {page_count, TotalPage},
      {elements, List}
    ];
 %% Here it is backward with the other API(s), that don't filter the data
-filterResponse(List, _From, _Page_Size, _All, _Filtered) ->
+filterResponse(List, _From, _Page_Size, _All) ->
   List.
 %% end filters functions
 

@@ -36,22 +36,14 @@ resource_exists(ReqData, Context) ->
          _               -> true
      end, ReqData, Context}.
 
+
+
+
 to_json(ReqData, Context) ->
-    case rabbit_mgmt_util:int("page", ReqData) of
-    	   undefined ->
-             rabbit_mgmt_util:reply_list(augmented(ReqData, Context), ReqData, Context);
-    	   Page_N -> case rabbit_mgmt_util:int("page_size", ReqData) of
-                undefined ->
-                    rabbit_mgmt_util:reply_list(augmented(ReqData, Context),
-                    ["vhost", "name"], ReqData, Context, Page_N, ?PAGE_SIZE);
-
-              Page_Size ->
-                  rabbit_mgmt_util:reply_list(augmented(ReqData, Context),
-                  ["vhost", "name"], ReqData, Context, Page_N, Page_Size)
-
-              end
-    end.
-
+    rabbit_mgmt_util:reply_list(augmented(ReqData, Context),
+      ["vhost", "name"], ReqData, Context,
+        rabbit_mgmt_util:getPageNumber(ReqData),
+          rabbit_mgmt_util:getPageSize(ReqData)).
 
 
 is_authorized(ReqData, Context) ->

@@ -5,33 +5,34 @@
     <h3>Pagination</h3>
     <div class="updatable">
     <div id="page-form" style="float:left; position:relative">
-    <label for="queue-page">Page </label>
-    <select id="queue-page">
+    
+    
+   
+</div>
+ <div >
+    <table class="">
+    <tr>
+    <th><label for="queue-page">Page </label> <select id="queue-page">
     <% for (var i = 1; i <= (queues.all/queues.filtered); i++) { if (i == queues.from) {%>
     <option selected="selected" value="<%= i %>"><%= i %></option>
-											<% } else { %>
-												    %>
-												    <option value="<%= i %>"><%= i %></option>
-												    <% } }%>
-    </select>
-    of <%= queues.page_count %>
-    </div>
+                      <% } else { %>
+                            %>
+                            <option value="<%= i %>"><%= i %></option>
+                            <% } }%>
+    </select> </th>
+        
 
-    <div>
-    <table class="list">
-    <tr>
-    <th>Total</th>
-    <th>Filtered</th>
-    <th>Page size</th>
-    </tr>
-    <tr>
-    <th><%= queues.all %></th>
-    <th><%= queues.filtered %></th>
-    <th><%= queues.page_size %></th>
+    <th><label for="queue-pageof">of </label> <%= queues.page_count %>   </th>
+    <th> - </th>
+    
+    <th>Total queues: <%= queues.all %> </th>
+    <th> - </th>
+    <th> Page size:  <input id="filter" class="truncate" type="text" value= <%= queues.page_size %>></input>   </th>
     </tr>
     </table>
     </div>
     </div>
+ 
 
 <h3>Filtering</h3>
 <%= filter_ui(queues.elements) %>
