@@ -5,7 +5,7 @@
     <h3>Pagination</h3>
     <table class="updatable">
     <tr>
-    <th><label for="queue-page">Page </label> <select id="queue-page">
+    <th><label for="queue-page">Page </label> <select id="queue-page" page-size="<%= queues.page_size %>">
     <% for (var i = 1; i <= queues.page_count; i++) { if (i == queues.from) {%>
     <option selected="selected" value="<%= i %>"><%= i %></option>
                       <% } else { %>
@@ -18,9 +18,9 @@
     <th><label for="queue-pageof">of </label> <%= queues.page_count %>   </th>
     <th> - </th>
     
-    <th>Total queues: <%= queues.all %> </th>
+    <th><label for="queue-total">Total queues: </label> <%= queues.all %> </th>
     <th> - </th>
-    <th> Page size:  <input id="filter" class="truncate" type="text" value= <%= queues.page_size %>></input>   </th>
+    <th><label for="queue-pagesize">Page size: </lable> <input id="queue-pagesize" class="truncate" type="text" value= <%= queues.page_size %> page="<%= queues.from %>"></input>   </th>
     </tr>
     </table>
 

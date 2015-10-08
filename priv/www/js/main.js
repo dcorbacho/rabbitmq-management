@@ -558,7 +558,15 @@ function postprocess() {
     }
     $('#queue-page').change(function() {
         var page = $(this).val();
-        render({'queues':  {path:    '/queues?page=' + page,
+	var pagesize = $(this).context.getAttribute('page-size');
+        render({'queues':  {path:    '/queues?page=' + page + '&page_size=' + pagesize,
+                            options: {sort:true,vhost:true,pagination:true}},
+                'vhosts': '/vhosts'}, 'queues', '#/queues');
+    });
+    $('#queue-pagesize').change(function() {
+	var page = $(this).context.getAttribute('page');
+        var pagesize = $(this).val();
+        render({'queues':  {path:    '/queues?page=' + page + '&page_size=' + pagesize,
                             options: {sort:true,vhost:true,pagination:true}},
                 'vhosts': '/vhosts'}, 'queues', '#/queues');
     });
