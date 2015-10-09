@@ -533,7 +533,9 @@ function postprocess() {
         partial_update();
     });
     $('input, select').live('focus', function() {
-        update_counter = 0; // If there's interaction, reset the counter.
+	clearInterval(timer);
+	update_counter = 0; // If there's interaction, reset the counter.
+	postprocess();
     });
     $('.tag-link').click(function() {
         $('#tags').val($(this).attr('tag'));
@@ -556,6 +558,11 @@ function postprocess() {
     if (! user_administrator) {
         $('.administrator-only').remove();
     }
+    postprocess_pagination();
+    update_multifields();
+}
+
+function postprocess_pagination() {
     $('#queue-page').change(function() {
         var page = $(this).val();
 	var pagesize = $(this).context.getAttribute('page-size');
@@ -570,7 +577,6 @@ function postprocess() {
                             options: {sort:true,vhost:true,pagination:true}},
                 'vhosts': '/vhosts'}, 'queues', '#/queues');
     });
-    update_multifields();
 }
 
 function postprocess_partial() {
